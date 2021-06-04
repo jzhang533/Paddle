@@ -265,10 +265,12 @@ class CustomOperator : public OperatorWithKernel {
 
 class CustomOpMaker : public OpProtoAndCheckerMaker {
  public:
-  explicit CustomOpMaker(const std::vector<std::string>& inputs,
-                         const std::vector<std::string>& outputs,
-                         const std::vector<std::string>& attrs)
-      : inputs_(inputs), outputs_(outputs), attrs_(attrs) {}
+  explicit CustomOpMaker(std::vector<std::string> inputs,
+                         std::vector<std::string> outputs,
+                         std::vector<std::string> attrs)
+      : inputs_(std::move(inputs)),
+        outputs_(std::move(outputs)),
+        attrs_(std::move(attrs)) {}
 
   void Make() override {
     for (auto& in_name : inputs_) {
@@ -358,13 +360,12 @@ class CustomGradOpMaker<OpDesc> : public SingleGradOpMaker<OpDesc> {
   explicit CustomGradOpMaker(
       const OpDesc& fwd_op, const std::unordered_set<std::string>& no_grad_set,
       std::unordered_map<std::string, std::string>* grad_to_var,
-      const std::vector<BlockDesc*>& grad_block, const std::string& name,
-      const std::vector<std::string>& inputs,
-      const std::vector<std::string>& outputs)
+      const std::vector<BlockDesc*>& grad_block, std::string name,
+      std::vector<std::string> inputs, std::vector<std::string> outputs)
       : SingleGradOpMaker<OpDesc>(fwd_op, no_grad_set, grad_to_var, grad_block),
-        name_(name),
-        inputs_(inputs),
-        outputs_(outputs) {}
+        name_(std::move(name)),
+        inputs_(std::move(inputs)),
+        outputs_(std::move(outputs)) {}
 
  protected:
   void Apply(GradOpPtr<OpDesc> grad_op) const override {
@@ -418,14 +419,13 @@ class CustomGradOpMaker<imperative::OpBase>
       const imperative::NameVarBaseMap& var_base_map_in,
       const imperative::NameVarBaseMap& var_base_map_out,
       const AttributeMap& attrs,
-      const std::map<std::string, std::string>& inplace_map,
-      const std::string& name, const std::vector<std::string>& inputs,
-      const std::vector<std::string>& outputs)
+      const std::map<std::string, std::string>& inplace_map, std::string name,
+      std::vector<std::string> inputs, std::vector<std::string> outputs)
       : SingleGradOpMaker<imperative::OpBase>(
             type, var_base_map_in, var_base_map_out, attrs, inplace_map),
-        name_(name),
-        inputs_(inputs),
-        outputs_(outputs) {}
+        name_(std::move(name)),
+        inputs_(std::move(inputs)),
+        outputs_(std::move(outputs)) {}
 
  protected:
   // TODO(chenweihang): The code is duplicated with the previous one, because
@@ -763,40 +763,41 @@ void RegisterOperatorWithMetaInfo(
             << string::join_strings(grad_op_outputs, ',');
 
     // GradOpDescMaker
-    info.grad_op_maker_ = [grad_op_name, grad_op_inputs, grad_op_outputs](
-        const OpDesc& fwd_op,
-        const std::unordered_set<std::string>& no_grad_set,
-        std::unordered_map<std::string, std::string>* grad_to_var,
-        const std::vector<BlockDesc*>& grad_block) {
-      CustomGradOpMaker<paddle::framework::OpDesc> maker(
-          fwd_op, no_grad_set, grad_to_var, grad_block, grad_op_name,
-          grad_op_inputs, grad_op_outputs);
-      return maker();
-    };
+    info.grad_op_maker_ =
+        [grad_op_name, grad_op_inputs, grad_op_outputs](
+            const OpDesc& fwd_op,
+            const std::unordered_set<std::string>& no_grad_set,
+            std::unordered_map<std::string, std::string>* grad_to_var,
+            const std::vector<BlockDesc*>& grad_block) {
+          CustomGradOpMaker<paddle::framework::OpDesc> maker(
+              fwd_op, no_grad_set, grad_to_var, grad_block, grad_op_name,
+              grad_op_inputs, grad_op_outputs);
+          return maker();
+        };
 
     // GradOpBaseMaker
-    info.dygraph_grad_op_maker_ = [grad_op_name, grad_op_inputs,
-                                   grad_op_outputs](
-        const std::string& type,
-        const imperative::NameVarBaseMap& var_base_map_in,
-        const imperative::NameVarBaseMap& var_base_map_out,
-        const framework::AttributeMap& attrs,
-        const std::map<std::string, std::string>& inplace_map) {
-      CustomGradOpMaker<paddle::imperative::OpBase> maker(
-          type, var_base_map_in, var_base_map_out, attrs, inplace_map,
-          grad_op_name, grad_op_inputs, grad_op_outputs);
-      return maker();
-    };
+    info.dygraph_grad_op_maker_ =
+        [grad_op_name, grad_op_inputs, grad_op_outputs](
+            const std::string& type,
+            const imperative::NameVarBaseMap& var_base_map_in,
+            const imperative::NameVarBaseMap& var_base_map_out,
+            const framework::AttributeMap& attrs,
+            const std::map<std::string, std::string>& inplace_map) {
+          CustomGradOpMaker<paddle::imperative::OpBase> maker(
+              type, var_base_map_in, var_base_map_out, attrs, inplace_map,
+              grad_op_name, grad_op_inputs, grad_op_outputs);
+          return maker();
+        };
 
     /* Grad op register */
     OpInfo grad_info;
 
     // Grad Op
-    grad_info.creator_ = [](
-        const std::string& type, const VariableNameMap& inputs,
-        const VariableNameMap& outputs, const AttributeMap& attrs) {
-      return new CustomOperator(type, inputs, outputs, attrs);
-    };
+    grad_info.creator_ =
+        [](const std::string& type, const VariableNameMap& inputs,
+           const VariableNameMap& outputs, const AttributeMap& attrs) {
+          return new CustomOperator(type, inputs, outputs, attrs);
+        };
 
     // Grad InferShape
     grad_info.infer_shape_ = [grad_op_inputs,
@@ -865,7 +866,7 @@ void RegisterOperatorWithMetaInfoMap(
 void LoadOpMetaInfoAndRegisterOp(const std::string& dso_name) {
   void* handle = paddle::platform::dynload::GetOpDsoHandle(dso_name);
 
-  typedef OpMetaInfoMap& get_op_meta_info_map_t();
+  using get_op_meta_info_map_t = OpMetaInfoMap&();
   auto* get_op_meta_info_map =
       detail::DynLoad<get_op_meta_info_map_t>(handle, "PD_GetOpMetaInfoMap");
   auto& op_meta_info_map = get_op_meta_info_map();

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "paddle/fluid/framework/reader.h"
+
 #include <deque>
 
 namespace paddle {
@@ -70,7 +71,7 @@ void ReaderBase::Start() {
   }
 }
 
-ReaderBase::~ReaderBase() {}
+ReaderBase::~ReaderBase() = default;
 
 DecoratedReader::~DecoratedReader() {
   VLOG(1) << "~DecoratedReader";

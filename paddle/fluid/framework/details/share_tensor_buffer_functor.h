@@ -48,10 +48,10 @@ namespace details {
 // this probable movement.
 class ShareTensorBufferFunctor {
  public:
-  ShareTensorBufferFunctor(
-      Scope *scope, size_t scope_idx, const std::string &op_type,
-      const std::vector<const ir::MemOptVarInfo *> &in_var_infos,
-      const std::vector<std::string> &out_var_names, bool share_dims = false);
+  ShareTensorBufferFunctor(Scope *scope, size_t scope_idx, std::string op_type,
+                           std::vector<const ir::MemOptVarInfo *> in_var_infos,
+                           std::vector<std::string> out_var_names,
+                           bool share_dims = false);
 
   void AddReuseVarPair(const ir::MemOptVarInfo *in_var_info,
                        const std::string &out_var_name);

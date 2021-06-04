@@ -15,6 +15,7 @@
 #include "paddle/fluid/framework/ir/multi_batch_merge_pass.h"
 
 #include <string>
+
 #include "paddle/fluid/framework/ir/graph_helper.h"
 #include "paddle/fluid/framework/op_proto_maker.h"
 
@@ -23,7 +24,7 @@ namespace framework {
 namespace ir {
 
 static const char kNumRepeats[] = "num_repeats";
-typedef std::unordered_map<std::string, std::vector<ir::Node*>> SSAVarList;
+using SSAVarList = std::unordered_map<std::string, std::vector<ir::Node*>>;
 
 ir::Node* SameNameVar(std::unordered_set<ir::Node*> all, ir::Node* target) {
   for (auto n : all) {

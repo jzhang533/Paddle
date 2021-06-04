@@ -13,6 +13,8 @@
 // limitations under the License.
 #include "paddle/fluid/framework/details/all_reduce_op_handle.h"
 
+#include <utility>
+
 #include "paddle/fluid/framework/details/container_cast.h"
 #include "paddle/fluid/framework/details/reduce_and_gather.h"
 #include "paddle/fluid/platform/profiler.h"
@@ -53,9 +55,11 @@ AllReduceOpHandle::AllReduceOpHandle(ir::Node *node,
 }
 #else
 AllReduceOpHandle::AllReduceOpHandle(ir::Node *node,
-                                     const std::vector<Scope *> &local_scopes,
-                                     const std::vector<platform::Place> &places)
-    : OpHandleBase(node), local_scopes_(local_scopes), places_(places) {
+                                     std::vector<Scope *> local_scopes,
+                                     std::vector<platform::Place> places)
+    : OpHandleBase(node),
+      local_scopes_(std::move(local_scopes)),
+      places_(std::move(places)) {
   PADDLE_ENFORCE_EQ(places_.size(), local_scopes_.size(),
                     platform::errors::InvalidArgument(
                         "The number of places and the number of local scopes "

@@ -44,8 +44,8 @@ PDNode* BuildSeqPoolConcatPattern(PDPattern* pattern,
            is_concat_op_with_inputs(x->outputs[0], num_inputs);
   };
 
-  auto is_seqpool_op_with_pootype_of_nth_input_of_concat = [=](
-      Node* x, const std::string& type, int idx) -> bool {
+  auto is_seqpool_op_with_pootype_of_nth_input_of_concat =
+      [=](Node* x, const std::string& type, int idx) -> bool {
     bool this_is_seqpool_op =
         x && x->IsOp() && x->Op()->Type() == "sequence_pool" &&
         x->Op()->HasAttr("pooltype") &&
@@ -182,8 +182,8 @@ static int BuildFusion(Graph* graph, const std::string& name_scope,
     op_desc.SetAttr("axis", concat_op->Op()->GetAttr("axis"));
     op_desc.SetOutput("Out", {concat_out_var->Name()});
     auto* op = graph->CreateOpNode(&op_desc);
-    for (size_t i = 0; i < input_vars.size(); ++i) {
-      IR_NODE_LINK_TO(input_vars[i], op);
+    for (auto& input_var : input_vars) {
+      IR_NODE_LINK_TO(input_var, op);
     }
     IR_NODE_LINK_TO(op, concat_out_var);
 
@@ -191,8 +191,8 @@ static int BuildFusion(Graph* graph, const std::string& name_scope,
     for (auto& item : subgraph) {
       marked_nodes.insert(item.second);
     }
-    for (size_t i = 0; i < input_vars.size(); ++i) {
-      marked_nodes.erase(input_vars[i]);
+    for (auto& input_var : input_vars) {
+      marked_nodes.erase(input_var);
     }
     marked_nodes.erase(concat_out_var);
     GraphSafeRemoveNodes(graph, marked_nodes);

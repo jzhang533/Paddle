@@ -60,7 +60,7 @@ class Executor {
   explicit Executor(const platform::DeviceContext& device)
       : Executor(device.GetPlace()) {}
 
-  explicit Executor(const platform::Place& place);
+  explicit Executor(platform::Place place);
 
   ~Executor();
   /*

@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include "paddle/fluid/framework/details/rpc_op_handle.h"
+
+#include <utility>
+
 #include "paddle/fluid/framework/ir/graph.h"
 #include "paddle/fluid/platform/profiler.h"
 
@@ -21,13 +24,13 @@ namespace framework {
 namespace details {
 
 RPCOpHandle::RPCOpHandle(ir::Node *node, const framework::OpDesc &op_desc,
-                         Scope *local_scope, const std::string &name,
-                         const platform::Place &place)
+                         Scope *local_scope, std::string name,
+                         platform::Place place)
     : OpHandleBase(node),
       op_(framework::OpRegistry::CreateOp(op_desc)),
       local_scope_(local_scope),
-      name_(name),
-      place_(place) {}
+      name_(std::move(name)),
+      place_(std::move(place)) {}
 
 void RPCOpHandle::RunImpl() {
   platform::RecordEvent record_event(Name());

@@ -870,9 +870,8 @@ void TensorToStream(std::ostream& os, const Tensor& tensor,
 }
 
 struct DeserializedDataFunctor {
-  DeserializedDataFunctor(void** buf, Tensor* tensor,
-                          const platform::Place& place)
-      : buf_(buf), tensor_(tensor), place_(place) {}
+  DeserializedDataFunctor(void** buf, Tensor* tensor, platform::Place place)
+      : buf_(buf), tensor_(tensor), place_(std::move(place)) {}
 
   template <typename T>
   void apply() {

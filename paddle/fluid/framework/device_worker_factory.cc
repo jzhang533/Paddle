@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include "paddle/fluid/framework/device_worker_factory.h"
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <memory>
 #include <string>
 
@@ -23,9 +23,10 @@ namespace framework {
 
 class DeviceWorker;
 
-typedef std::shared_ptr<DeviceWorker> (*Createdevice_workerFunction)();
-typedef std::unordered_map<std::string, Createdevice_workerFunction>
-    device_workerMap;
+using Createdevice_workerFunction = std::shared_ptr<DeviceWorker> (*)();
+typedef std::unordered_m;
+using device_workerMap =
+    std::unordered_map<std::string, Createdevice_workerFunction>;
 device_workerMap g_device_worker_map;
 #define REGISTER_DEVICE_WORKER_CLASS(device_worker_class)                \
   namespace {                                                            \

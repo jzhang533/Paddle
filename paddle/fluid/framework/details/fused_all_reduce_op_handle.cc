@@ -23,8 +23,8 @@ namespace paddle {
 namespace framework {
 namespace details {
 
-typedef std::vector<std::vector<std::pair<std::string, const LoDTensor *>>>
-    GradientAndLoDTensor;
+using GradientAndLoDTensor =
+    std::vector<std::vector<std::pair<std::string, const LoDTensor *>>>;
 
 #if defined(PADDLE_WITH_NCCL) || defined(PADDLE_WITH_RCCL)
 FusedAllReduceOpHandle::FusedAllReduceOpHandle(
@@ -113,8 +113,7 @@ void FusedAllReduceOpHandle::FusedAllReduceFunc(
     GetGradLoDTensor(scope_idx, in_var_handles, out_var_handles, &g_tensor);
 
     int64_t element_num = 0;
-    framework::proto::VarType::Type ele_dtype =
-        static_cast<framework::proto::VarType::Type>(0);
+    auto ele_dtype = static_cast<framework::proto::VarType::Type>(0);
     GetDTypeAndNumel(g_tensor, &ele_dtype, &element_num);
 
     if (scope_idx == 0) {
@@ -237,9 +236,10 @@ void FusedAllReduceOpHandle::GetGradLoDTensor(
 
     PADDLE_ENFORCE_EQ(
         platform::is_same_place(lod_tensor.place(), places_.at(scope_idx)),
-        true, platform::errors::InvalidArgument(
-                  "The variable '%s' at scope %d is not in the right place.",
-                  var_name, scope_idx));
+        true,
+        platform::errors::InvalidArgument(
+            "The variable '%s' at scope %d is not in the right place.",
+            var_name, scope_idx));
     grad_tensor->emplace_back(std::make_pair(var_name, &lod_tensor));
   }
 }
@@ -267,10 +267,11 @@ void FusedAllReduceOpHandle::GetDTypeAndNumel(
     // Get element number
     int64_t len = grad_tensor.at(i).second->numel();
     PADDLE_ENFORCE_GT(
-        len, 0, platform::errors::InvalidArgument(
-                    "The size of grad tensors of fused_all_reduce_op_handle  "
-                    "must be > 0, but got %d.",
-                    len));
+        len, 0,
+        platform::errors::InvalidArgument(
+            "The size of grad tensors of fused_all_reduce_op_handle  "
+            "must be > 0, but got %d.",
+            len));
     *numel +=
         platform::Alignment(len * size_of_dtype, places_[0]) / size_of_dtype;
   }

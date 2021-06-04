@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "paddle/fluid/framework/block_desc.h"
 
+#include <memory>
 #include <queue>
 
 #include "paddle/fluid/framework/operator.h"
@@ -52,7 +53,7 @@ VarDesc *BlockDesc::RenameVar(const std::string &old_name,
   }
   need_update_ = true;
   auto *var = this->Var(old_name);
-  VarDesc *new_var = new VarDesc(*(var->Proto()));
+  auto *new_var = new VarDesc(*(var->Proto()));
   new_var->SetName(new_name);
   vars_[new_name].reset(new_var);
   // rename inputs and outputs
@@ -205,7 +206,7 @@ proto::BlockDesc *BlockDesc::Proto() {
 BlockDesc::BlockDesc(ProgramDesc *prog, proto::BlockDesc *desc)
     : prog_(prog), desc_(desc), need_update_(false) {
   for (const proto::VarDesc &var_desc : desc_->vars()) {
-    vars_[var_desc.name()].reset(new VarDesc(var_desc));
+    vars_[var_desc.name()] = std::make_unique<VarDesc>(var_desc);
   }
   for (const proto::OpDesc &op_desc : desc_->ops()) {
     ops_.emplace_back(new OpDesc(op_desc, this));

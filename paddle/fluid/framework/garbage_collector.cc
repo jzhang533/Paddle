@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <functional>
+#include <memory>
 #if defined(PADDLE_WITH_CUDA) || defined(PADDLE_WITH_HIP)
 #include "paddle/fluid/platform/cuda_device_guard.h"
 #endif
@@ -29,10 +30,10 @@ namespace framework {
 GarbageCollector::GarbageCollector(const platform::Place &place,
                                    size_t max_memory_size)
     : max_memory_size_((std::max)(max_memory_size, static_cast<size_t>(1))) {
-  garbages_.reset(new GarbageQueue());
+  garbages_ = std::make_unique<GarbageQueue>();
   dev_ctx_ = platform::DeviceContextPool::Instance().Get(place);
   if (max_memory_size_ > 1) {
-    mutex_.reset(new std::mutex());
+    mutex_ = std::make_unique<std::mutex>();
   }
 }
 

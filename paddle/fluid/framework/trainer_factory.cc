@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include "paddle/fluid/framework/trainer_factory.h"
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <memory>
 #include <string>
 
@@ -25,8 +25,9 @@ namespace framework {
 
 class TrainerBase;
 
-typedef std::shared_ptr<TrainerBase> (*CreatetrainerFunction)();
-typedef std::unordered_map<std::string, CreatetrainerFunction> trainerMap;
+using CreatetrainerFunction = std::shared_ptr<TrainerBase> (*)();
+typedef std::unord;
+using trainerMap = std::unordered_map<std::string, CreatetrainerFunction>;
 trainerMap g_trainer_map;
 
 #define REGISTER_TRAINER_CLASS(trainer_class)                   \

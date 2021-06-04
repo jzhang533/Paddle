@@ -101,7 +101,7 @@ void DeviceWorker::DumpParam(const Scope& scope, const int batch_id) {
     if (var == nullptr) {
       continue;
     }
-    LoDTensor* tensor = var->GetMutable<LoDTensor>();
+    auto* tensor = var->GetMutable<LoDTensor>();
     framework::LoDTensor cpu_tensor;
     if (platform::is_gpu_place(tensor->place())) {
       TensorCopySync(*tensor, platform::CPUPlace(), &cpu_tensor);
@@ -170,7 +170,7 @@ void DeviceWorker::DumpField(const Scope& scope, int dump_mode,
               << "] cannot be find in scope, so it was skipped.";
       continue;
     }
-    LoDTensor* tensor = var->GetMutable<LoDTensor>();
+    auto* tensor = var->GetMutable<LoDTensor>();
     if (!tensor->IsInitialized()) {
       VLOG(0) << "Note: field[" << field
               << "] is not initialized, so it was skipped.";
@@ -183,9 +183,10 @@ void DeviceWorker::DumpField(const Scope& scope, int dump_mode,
       tensor = &cpu_tensor;
     }
     if (!CheckValidOutput(tensor, batch_size)) {
-      VLOG(0) << "Note: field[" << field << "] cannot pass check, so it was "
-                                            "skipped. Maybe the dimension is "
-                                            "wrong ";
+      VLOG(0) << "Note: field[" << field
+              << "] cannot pass check, so it was "
+                 "skipped. Maybe the dimension is "
+                 "wrong ";
       continue;
     }
     for (size_t i = 0; i < batch_size; ++i) {
@@ -199,11 +200,11 @@ void DeviceWorker::DumpField(const Scope& scope, int dump_mode,
     }
   }
   // #pragma omp parallel for
-  for (size_t i = 0; i < ars.size(); i++) {
-    if (ars[i].length() == 0) {
+  for (auto& ar : ars) {
+    if (ar.length() == 0) {
       continue;
     }
-    writer_ << ars[i];
+    writer_ << ar;
   }
 }
 

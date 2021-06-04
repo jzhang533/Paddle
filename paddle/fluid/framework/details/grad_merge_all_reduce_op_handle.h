@@ -60,7 +60,7 @@ class GradMergeAllReduceOpHandle : public AllReduceOpHandle {
   GradMergeAllReduceOpHandle(ir::Node *node,
                              const std::vector<Scope *> &local_scopes,
                              const std::vector<platform::Place> &places,
-                             const std::string &grad_merge_cond_name);
+                             std::string grad_merge_cond_name);
 #endif
   std::string Name() const override;
 
@@ -94,7 +94,7 @@ class FusedGradMergeAllReduceOpHandle : public FusedAllReduceOpHandle {
                                   const std::vector<Scope *> &local_scopes,
                                   const std::vector<platform::Place> &places,
                                   const size_t num_of_all_reduce,
-                                  const std::string &grad_merge_cond_name);
+                                  std::string grad_merge_cond_name);
 #endif
 
   std::string Name() const override;

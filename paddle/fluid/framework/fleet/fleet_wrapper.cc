@@ -35,7 +35,7 @@ namespace paddle {
 namespace framework {
 
 const uint32_t MAX_FEASIGN_NUM = 1024 * 100 * 100;
-std::shared_ptr<FleetWrapper> FleetWrapper::s_instance_ = NULL;
+std::shared_ptr<FleetWrapper> FleetWrapper::s_instance_ = nullptr;
 bool FleetWrapper::is_initialized_ = false;
 
 #ifdef PADDLE_WITH_PSLIB

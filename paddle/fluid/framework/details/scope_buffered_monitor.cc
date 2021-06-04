@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include "paddle/fluid/framework/details/scope_buffered_monitor.h"
+
+#include <utility>
+
 #include "paddle/fluid/platform/profiler.h"
 
 namespace paddle {
@@ -80,9 +83,9 @@ size_t GetScopeVarMemorySize(Scope *scope) {
 }
 
 ScopeBufferedMonitor::ScopeBufferedMonitor(
-    const std::vector<platform::Place> &places,
-    const std::vector<Scope *> &local_exec_scopes)
-    : places_(places), local_exec_scopes_(local_exec_scopes) {
+    std::vector<platform::Place> places, std::vector<Scope *> local_exec_scopes)
+    : places_(std::move(places)),
+      local_exec_scopes_(std::move(local_exec_scopes)) {
   pre_local_exec_scopes_.resize(local_exec_scopes_.size());
   post_local_exec_scopes_.resize(local_exec_scopes_.size());
 }

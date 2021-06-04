@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "paddle/fluid/framework/ir/repeated_fc_relu_fuse_pass.h"
+
 #include <string>
 
 #include "paddle/fluid/framework/op_version_registry.h"
@@ -120,9 +121,9 @@ void BuildRepeatedFCReluPattern(PDPattern* pattern,
     return x->outputs[fc_idx]->outputs[0];
   };
 
-  auto var_next_is_fc_act_repeated_n_times = [=](
-      Node* x, int repeated_times, const std::string& act_type = "relu",
-      bool check_in_has_only_one_out = true) -> bool {
+  auto var_next_is_fc_act_repeated_n_times =
+      [=](Node* x, int repeated_times, const std::string& act_type = "relu",
+          bool check_in_has_only_one_out = true) -> bool {
     for (int i = 0; i < repeated_times; ++i) {
       if (!var_next_is_fc_act(x, act_type,
                               i == 0 && check_in_has_only_one_out)) {
@@ -166,9 +167,9 @@ void BuildRepeatedFCReluPattern(PDPattern* pattern,
     return nullptr;
   };
 
-  auto var_before_is_fc_act_repeated_n_times = [=](
-      Node* x, int repeated_times,
-      const std::string& act_type = "relu") -> bool {
+  auto var_before_is_fc_act_repeated_n_times = [=](Node* x, int repeated_times,
+                                                   const std::string& act_type =
+                                                       "relu") -> bool {
     for (int i = 0; i < repeated_times; ++i) {
       if (!var_before_is_fc_act(x, act_type, i == repeated_times - 1)) {
         return false;
@@ -361,8 +362,8 @@ static int BuildFusion(Graph* graph, const std::string& name_scope,
       IR_NODE_LINK_TO(weights_vars[i], op);
       IR_NODE_LINK_TO(bias_vars[i], op);
     }
-    for (size_t i = 0; i < relu_vars.size(); ++i) {
-      IR_NODE_LINK_TO(op, relu_vars[i]);
+    for (auto relu_var : relu_vars) {
+      IR_NODE_LINK_TO(op, relu_var);
     }
     IR_NODE_LINK_TO(op, last_out_var);
 
@@ -374,8 +375,8 @@ static int BuildFusion(Graph* graph, const std::string& name_scope,
       marked_nodes.erase(weights_vars[i]);
       marked_nodes.erase(bias_vars[i]);
     }
-    for (size_t i = 0; i < relu_vars.size(); ++i) {
-      marked_nodes.erase(relu_vars[i]);
+    for (auto& relu_var : relu_vars) {
+      marked_nodes.erase(relu_var);
     }
     marked_nodes.erase(input_var);
     marked_nodes.erase(last_out_var);

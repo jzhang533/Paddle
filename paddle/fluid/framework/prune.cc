@@ -17,6 +17,7 @@ limitations under the License. */
 #include <glog/logging.h>
 
 #include <queue>
+
 #include "paddle/fluid/framework/op_proto_maker.h"
 
 namespace paddle {
@@ -350,8 +351,7 @@ void PruneBackwardImpl(proto::BlockDesc* origin, proto::BlockDesc* pruned) {
 
   // Step 1. Mark backward, optimize and lrsched ops in the block
   auto* ops = origin->mutable_ops();
-  for (auto op_iter = ops->begin(); op_iter != ops->end(); ++op_iter) {
-    auto& op_desc = *op_iter;
+  for (auto& op_desc : *ops) {
     auto op_role = GetOpRole(op_desc);
     if (op_role & static_cast<int>(OpRole::kOptimize) ||
         op_role & static_cast<int>(OpRole::kBackward) ||
@@ -366,12 +366,12 @@ void PruneBackwardImpl(proto::BlockDesc* origin, proto::BlockDesc* pruned) {
   //       to remove op and var
   auto* op_field = pruned->mutable_ops();
   op_field->Clear();
-  for (auto op_iter = ops->begin(); op_iter != ops->end(); ++op_iter) {
-    if (!HasFalseTarget(*op_iter)) {
+  for (auto& op_iter : *ops) {
+    if (!HasFalseTarget(op_iter)) {
       auto* op = op_field->Add();
-      AppendOpInputVarNames(*op_iter, &op_input_vars);
-      AppendOpOutputVarNames(*op_iter, &op_output_vars);
-      *op = *op_iter;
+      AppendOpInputVarNames(op_iter, &op_input_vars);
+      AppendOpOutputVarNames(op_iter, &op_output_vars);
+      *op = op_iter;
     }
   }
 
@@ -469,8 +469,7 @@ std::tuple<framework::ProgramDesc, std::map<int, int>> PruneBackward(
   for (int i = 0; i < pruned_desc.blocks_size(); i++) {
     auto* pruned = pruned_desc.mutable_blocks(i);
     auto* ops = pruned->mutable_ops();
-    for (auto op_iter = ops->begin(); op_iter != ops->end(); ++op_iter) {
-      auto& op_desc = *op_iter;
+    for (auto& op_desc : *ops) {
       if (HasSubBlock(op_desc)) {
         int origin_sub_idx = GetSubBlockIndex(op_desc);
         auto sub_idx =

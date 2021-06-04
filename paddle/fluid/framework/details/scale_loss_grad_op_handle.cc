@@ -15,6 +15,7 @@
 #include "paddle/fluid/framework/details/scale_loss_grad_op_handle.h"
 
 #include <string>
+#include <utility>
 
 #include "paddle/fluid/platform/profiler.h"
 
@@ -35,12 +36,12 @@ ScaleLossGradOpHandle::ScaleLossGradOpHandle(ir::Node *node, size_t num_dev,
     : OpHandleBase(node),
       coeff_(static_cast<float>(1.0 / num_dev)),
       scope_(scope),
-      place_(place),
+      place_(std::move(place)),
       out_dtype_(dtype) {
   this->SetDeviceContext(place_, dev_ctx);
 }
 
-ScaleLossGradOpHandle::~ScaleLossGradOpHandle() {}
+ScaleLossGradOpHandle::~ScaleLossGradOpHandle() = default;
 
 struct ScaleLossGradFunctor {
   float coeff_;
@@ -51,7 +52,11 @@ struct ScaleLossGradFunctor {
 
   ScaleLossGradFunctor(float coeff, Tensor *out, platform::Place place,
                        proto::VarType::Type dtype, platform::DeviceContext *ctx)
-      : coeff_(coeff), out_(out), place_(place), out_dtype_(dtype), ctx_(ctx) {}
+      : coeff_(coeff),
+        out_(out),
+        place_(std::move(place)),
+        out_dtype_(dtype),
+        ctx_(ctx) {}
 
   template <typename OutT>
   void apply() const {

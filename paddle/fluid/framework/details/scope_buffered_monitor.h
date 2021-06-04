@@ -26,8 +26,8 @@ namespace details {
 
 class ScopeBufferedMonitor {
  public:
-  ScopeBufferedMonitor(const std::vector<platform::Place> &places,
-                       const std::vector<Scope *> &local_exec_scopes);
+  ScopeBufferedMonitor(std::vector<platform::Place> places,
+                       std::vector<Scope *> local_exec_scopes);
 
   void Apply(const std::function<void()> &callback, bool has_fetch);
 

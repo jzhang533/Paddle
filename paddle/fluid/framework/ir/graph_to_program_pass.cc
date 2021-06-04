@@ -35,7 +35,7 @@ void GraphToProgramPass::ApplyImpl(ir::Graph* graph) const {
     VLOG(2) << "graph to program remove " << vars2remove.size() << " nodes";
   }
 
-  ProgramDesc& program = Get<ProgramDesc>("program");
+  auto& program = Get<ProgramDesc>("program");
 
   std::unique_ptr<proto::ProgramDesc> program_pb(
       new proto::ProgramDesc(*program.Proto()));

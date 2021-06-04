@@ -14,6 +14,8 @@
 
 #include "paddle/fluid/framework/details/async_ssa_graph_executor.h"
 
+#include <utility>
+
 #include "paddle/fluid/framework/variable_helper.h"
 
 #if defined PADDLE_WITH_PSCORE
@@ -47,11 +49,11 @@ void ProcessGraph(std::vector<ir::Graph *> graphs, Scope *scope) { return; }
 
 AsyncSSAGraphExecutor::AsyncSSAGraphExecutor(
     const ExecutionStrategy &strategy, const std::vector<Scope *> &local_scopes,
-    const std::vector<Scope *> &local_exec_scopes,
+    std::vector<Scope *> local_exec_scopes,
     const std::vector<platform::Place> &places, std::vector<ir::Graph *> graphs)
     : strategy_(std::move(strategy)),
       local_scopes_(std::move(local_scopes)),
-      local_exec_scopes_(local_exec_scopes),
+      local_exec_scopes_(std::move(local_exec_scopes)),
       pool_(places.size() >= 2 ? new ::ThreadPool(places.size()) : nullptr),
       places_(std::move(places)),
       graphs_(std::move(graphs)) {
@@ -175,9 +177,9 @@ FetchResultType AsyncSSAGraphExecutor::Run(
       auto array = BOOST_GET(LoDTensorArray, val.at(fetch_idx));
       LoDTensorArray item_array;
       item_array.reserve(array.size());
-      for (size_t i = 0; i < array.size(); ++i) {
+      for (auto &i : array) {
         std::vector<const LoDTensor *> lodtensor_ptrs;
-        lodtensor_ptrs.push_back(&array[i]);
+        lodtensor_ptrs.push_back(&i);
         item_array.emplace_back();
         item_array.back().MergeLoDTensor(lodtensor_ptrs, platform::CPUPlace());
       }

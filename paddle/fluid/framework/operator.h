@@ -137,8 +137,8 @@ class RuntimeContext {
  */
 class OperatorBase {
  public:
-  OperatorBase(const std::string& type, const VariableNameMap& inputs,
-               const VariableNameMap& outputs, const AttributeMap& attrs);
+  OperatorBase(const std::string& type, VariableNameMap inputs,
+               VariableNameMap outputs, AttributeMap attrs);
 
   virtual ~OperatorBase() {}
 

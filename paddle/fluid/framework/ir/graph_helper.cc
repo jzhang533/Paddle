@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "paddle/fluid/framework/ir/graph_helper.h"
+
 #include <stack>
 
 DEFINE_string(print_sub_graph_dir, "",
@@ -267,8 +268,7 @@ std::vector<ir::Node *> TopologyDfsSortOperations(const Graph &graph) {
   // traverse the graph
   int num_ops = op_queue.size();
   while (num_ops) {
-    for (auto it = op_queue.begin(); it != op_queue.end(); it++) {
-      auto *&cur_op = *it;
+    for (auto &cur_op : op_queue) {
       if (!cur_op || in_degree[cur_op] > 0) continue;
       // visit this node
       // put all the output var of this op valid.

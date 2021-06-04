@@ -14,10 +14,12 @@
 
 #pragma once
 #include <ThreadPool.h>
+
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
 #include "paddle/fluid/framework/blocking_queue.h"
 #include "paddle/fluid/framework/details/exception_holder.h"
 #include "paddle/fluid/framework/details/execution_strategy.h"
@@ -32,8 +34,8 @@ class OpHandleBase;
 class FastThreadedSSAGraphExecutor : public SSAGraphExecutor {
  public:
   FastThreadedSSAGraphExecutor(const ExecutionStrategy &strategy,
-                               const std::vector<Scope *> &local_scopes,
-                               const std::vector<Scope *> &local_exec_scopes,
+                               std::vector<Scope *> local_scopes,
+                               std::vector<Scope *> local_exec_scopes,
                                const std::vector<platform::Place> &places,
                                ir::Graph *graph);
   FetchResultType Run(const std::vector<std::string> &fetch_tensors,

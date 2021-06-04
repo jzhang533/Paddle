@@ -20,8 +20,9 @@ limitations under the License. */
 
 namespace paddle {
 namespace framework {
-typedef std::unique_ptr<Dataset> (*CreateDatasetFunction)();
-typedef std::unordered_map<std::string, CreateDatasetFunction> datasetMap;
+using CreateDatasetFunction = std::unique_ptr<Dataset> (*)();
+typedef std::unord;
+using datasetMap = std::unordered_map<std::string, CreateDatasetFunction>;
 datasetMap g_dataset_map;
 
 #define REGISTER_DATASET_CLASS(dataset_class)                   \

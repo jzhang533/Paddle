@@ -15,6 +15,7 @@
 #include "paddle/fluid/framework/save_load_util.h"
 
 #include <fstream>
+#include <utility>
 
 #include "paddle/fluid/imperative/layer.h"
 
@@ -36,9 +37,8 @@ void CheckInStreamState(std::istream& istre, size_t length) {
 }
 
 struct DeserializedDataFunctor {
-  DeserializedDataFunctor(void** buf, Tensor* tensor,
-                          const platform::Place& place)
-      : buf_(buf), tensor_(tensor), place_(place) {}
+  DeserializedDataFunctor(void** buf, Tensor* tensor, platform::Place place)
+      : buf_(buf), tensor_(tensor), place_(std::move(place)) {}
 
   template <typename T>
   void apply() {
@@ -115,22 +115,22 @@ bool SaveStaticNameListToDisk(
     const std::vector<std::string>& vec_tensor_name_list, const Scope& scope) {
   std::map<std::string, Tensor*> map_tensor;
 
-  for (size_t i = 0; i < vec_tensor_name_list.size(); ++i) {
-    auto var_ptr = scope.FindVar(vec_tensor_name_list[i]);
+  for (const auto& i : vec_tensor_name_list) {
+    auto var_ptr = scope.FindVar(i);
     PADDLE_ENFORCE_NOT_NULL(
         var_ptr, platform::errors::NotFound("Variable (%s) is not found when "
                                             "saving model, please make sure "
                                             "that exe.run(startup_program) has "
                                             "been executed.",
-                                            vec_tensor_name_list[i]));
+                                            i));
     Tensor* tensor = var_ptr->GetMutable<LoDTensor>();
     PADDLE_ENFORCE_EQ(tensor->IsInitialized(), true,
                       platform::errors::PreconditionNotMet(
                           "Paramter [%s] is not initialzed, please make sure "
                           "that exe.run(startup_program) has been executed.",
-                          vec_tensor_name_list[i]));
+                          i));
 
-    map_tensor[vec_tensor_name_list[i]] = tensor;
+    map_tensor[i] = tensor;
   }
 
   return SaveTensorToDisk(file_name, map_tensor);
@@ -141,8 +141,8 @@ bool SaveDygraphVarBaseListToDisk(
     const std::vector<std::shared_ptr<imperative::VarBase>>&
         vec_var_base_list) {
   std::map<std::string, Tensor*> map_tensor;
-  for (size_t i = 0; i < vec_var_base_list.size(); ++i) {
-    auto var_ptr = vec_var_base_list[i]->MutableVar();
+  for (const auto& i : vec_var_base_list) {
+    auto var_ptr = i->MutableVar();
 
     Tensor* tensor = var_ptr->GetMutable<LoDTensor>();
 
@@ -150,9 +150,9 @@ bool SaveDygraphVarBaseListToDisk(
                       platform::errors::PreconditionNotMet(
                           "Paramter [%s] is not initialzed, please make sure "
                           "that exe.run(startup_program) has been executed.",
-                          vec_var_base_list[i]->Name()));
+                          i->Name()));
 
-    map_tensor[vec_var_base_list[i]->Name()] = tensor;
+    map_tensor[i->Name()] = tensor;
   }
 
   return SaveTensorToDisk(file_name, map_tensor);
@@ -186,20 +186,20 @@ bool LoadStaticNameListFromDisk(
   std::map<std::string, std::shared_ptr<Tensor>> map_load_tensor;
   LoadTensorFromDisk(file_name, &map_load_tensor);
 
-  for (size_t i = 0; i < vec_tensor_name_list.size(); ++i) {
-    auto it = map_load_tensor.find(vec_tensor_name_list[i]);
-    PADDLE_ENFORCE_NE(it, map_load_tensor.end(),
-                      platform::errors::NotFound(
-                          "Parameter (%s) not found in model file (%s).",
-                          vec_tensor_name_list[i], file_name));
-    auto var_ptr = scope.FindVar(vec_tensor_name_list[i]);
+  for (const auto& i : vec_tensor_name_list) {
+    auto it = map_load_tensor.find(i);
+    PADDLE_ENFORCE_NE(
+        it, map_load_tensor.end(),
+        platform::errors::NotFound(
+            "Parameter (%s) not found in model file (%s).", i, file_name));
+    auto var_ptr = scope.FindVar(i);
 
     PADDLE_ENFORCE_NOT_NULL(
         var_ptr,
         platform::errors::PreconditionNotMet(
             "Parameter (%s) is not created when loading model, "
             "please make sure that exe.run(startup_program) has been executed.",
-            vec_tensor_name_list[i]));
+            i));
 
     Tensor* tensor = var_ptr->GetMutable<LoDTensor>();
     PADDLE_ENFORCE_NOT_NULL(
@@ -207,14 +207,14 @@ bool LoadStaticNameListFromDisk(
         platform::errors::PreconditionNotMet(
             "Paramter [%s] is not initialzed, "
             "please make sure that exe.run(startup_program) has been executed.",
-            vec_tensor_name_list[i]));
+            i));
 
     PADDLE_ENFORCE_EQ(tensor->IsInitialized(), true,
                       platform::errors::PreconditionNotMet(
                           "Paramter [%s] is not initialzed, "
                           "please make sure that exe.run(startup_program) has "
                           "been executed.v",
-                          vec_tensor_name_list[i]));
+                          i));
     PADDLE_ENFORCE_EQ(
         tensor->dims(), it->second->dims(),
         platform::errors::InvalidArgument(
@@ -222,7 +222,7 @@ bool LoadStaticNameListFromDisk(
             "shape of "
             "(%s), while the loaded parameter (namely [ %s ]) has a shape of "
             "(%s).",
-            tensor->dims(), vec_tensor_name_list[i], it->second->dims()));
+            tensor->dims(), i, it->second->dims()));
 
     TensorCopySync(*(it->second.get()), tensor->place(), tensor);
 
@@ -341,8 +341,9 @@ bool LoadTensorFromDisk(
     uint32_t version;
     fin.read(reinterpret_cast<char*>(&version), sizeof(version));
     CheckInStreamState(fin, sizeof(version));
-    PADDLE_ENFORCE_EQ(version, 0U, platform::errors::InvalidArgument(
-                                       "Only version 0 tensor is supported."));
+    PADDLE_ENFORCE_EQ(version, 0U,
+                      platform::errors::InvalidArgument(
+                          "Only version 0 tensor is supported."));
     proto::VarType::TensorDesc desc;
     {
       // int32_t size

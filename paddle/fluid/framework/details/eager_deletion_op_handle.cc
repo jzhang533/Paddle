@@ -14,6 +14,8 @@
 
 #include "paddle/fluid/framework/details/eager_deletion_op_handle.h"
 
+#include <utility>
+
 #include "paddle/fluid/framework/ir/memory_optimize_pass/memory_optimization_var_info.h"
 #include "paddle/fluid/platform/profiler.h"
 #if defined(PADDLE_WITH_CUDA) || defined(PADDLE_WITH_HIP)
@@ -31,13 +33,12 @@ namespace framework {
 namespace details {
 
 EagerDeletionOpHandle::EagerDeletionOpHandle(
-    ir::Node *node, Scope *scope, size_t scope_idx,
-    const platform::Place &place,
+    ir::Node *node, Scope *scope, size_t scope_idx, platform::Place place,
     const std::unordered_set<ir::MemOptVarInfo *> &vars, GarbageCollector *gc)
     : OpHandleBase(node),
       scope_(scope),
       scope_idx_(scope_idx),
-      place_(place),
+      place_(std::move(place)),
       var_infos_(vars.begin(), vars.end()),
       gc_(gc) {
 #if defined(PADDLE_WITH_CUDA) || defined(PADDLE_WITH_HIP)

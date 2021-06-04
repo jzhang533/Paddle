@@ -147,7 +147,7 @@ static int shell_popen_fork_internal(const char* real_cmd, bool do_read,
 
 static int read_from_pipe(FILE* fp, std::string* output) {
   char buf[4096];
-  while (1) {
+  while (true) {
     int n = fread(buf, 1, 4096, fp);
     if (n <= 0) {
       break;

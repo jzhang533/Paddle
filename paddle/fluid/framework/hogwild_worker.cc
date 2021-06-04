@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <ctime>
+
 #include "paddle/fluid/framework/data_type.h"
 #include "paddle/fluid/framework/device_worker.h"
 #include "paddle/fluid/operators/controlflow/conditional_block_op_helper.h"
@@ -76,8 +77,8 @@ void HogwildWorker::CreateThreadScope(const ProgramDesc &program) {
             root_scope_->FindVar(var->Name())->GetMutable<LoDTensor>()->numel();
         auto *ptr1 = thread_scope_->Var(var->Name());
         InitializeVariable(ptr1, var->GetType());
-        LoDTensor *thread_tensor = ptr1->GetMutable<LoDTensor>();
-        LoDTensor *root_tensor =
+        auto *thread_tensor = ptr1->GetMutable<LoDTensor>();
+        auto *root_tensor =
             root_scope_->FindVar(var->Name())->GetMutable<LoDTensor>();
 #define MemsetCallback(cpp_type, proto_type)                     \
   do {                                                           \
@@ -123,8 +124,8 @@ void HogwildWorker::TrainFilesWithProfiler() {
     op_name.push_back(op->Type());
   }
   op_total_time.resize(ops_.size());
-  for (size_t i = 0; i < op_total_time.size(); ++i) {
-    op_total_time[i] = 0.0;
+  for (double &i : op_total_time) {
+    i = 0.0;
   }
   platform::Timer timeline;
   double total_time = 0.0;
@@ -140,8 +141,8 @@ void HogwildWorker::TrainFilesWithProfiler() {
     total_time += timeline.ElapsedSec();
     for (size_t i = 0; i < ops_.size(); ++i) {
       bool need_skip = false;
-      for (auto t = 0u; t < skip_ops_.size(); ++t) {
-        if (ops_[i]->Type().find(skip_ops_[t]) != std::string::npos) {
+      for (auto &skip_op : skip_ops_) {
+        if (ops_[i]->Type().find(skip_op) != std::string::npos) {
           need_skip = true;
           break;
         }
@@ -219,8 +220,8 @@ void HogwildWorker::TrainFiles() {
   while ((cur_batch = device_reader_->Next()) > 0) {
     for (auto &op : ops_) {
       bool need_skip = false;
-      for (auto t = 0u; t < skip_ops_.size(); ++t) {
-        if (op->Type().find(skip_ops_[t]) != std::string::npos) {
+      for (auto &skip_op : skip_ops_) {
+        if (op->Type().find(skip_op) != std::string::npos) {
           need_skip = true;
           break;
         }

@@ -65,9 +65,9 @@ std::once_flag p2p_init_flag;
 
 class ParallelExecutorPrivate {
  public:
-  ParallelExecutorPrivate(const std::vector<platform::Place> &places,
+  ParallelExecutorPrivate(std::vector<platform::Place> places,
                           Scope *global_scope)
-      : places_(places), global_scope_(global_scope) {
+      : places_(std::move(places)), global_scope_(global_scope) {
     if (!FLAGS_pe_profile_fname.empty()) {
       std::call_once(gProfileOnce, [] {
 #ifdef WITH_GPERFTOOLS
@@ -473,10 +473,9 @@ ir::Graph *ParallelExecutorPrivate::ApplyMemoryOptimizePass(ir::Graph *graph) {
   if (!is_gc_enabled) {
     return graph;
   }
-  size_t max_memory_size = static_cast<size_t>(GetEagerDeletionThreshold());
+  auto max_memory_size = static_cast<size_t>(GetEagerDeletionThreshold());
 
-  for (size_t i = 0; i < places_.size(); ++i) {
-    auto &place = places_[i];
+  for (auto &place : places_) {
     if (gcs_.count(place) > 0) {
       continue;
     }
@@ -507,8 +506,8 @@ ir::Graph *ParallelExecutorPrivate::ApplyMemoryOptimizePass(ir::Graph *graph) {
           "Please recompile or reinstall Paddle with XPU support."));
 #endif
     } else if (platform::is_cpu_place(place)) {
-      gc.reset(new CPUGarbageCollector(
-          BOOST_GET_CONST(platform::CPUPlace, place), max_memory_size));
+      gc = std::make_unique<CPUGarbageCollector>(
+          BOOST_GET_CONST(platform::CPUPlace, place), max_memory_size);
       VLOG(10) << "Created GarbageCollector at " << place;
     } else {
       PADDLE_THROW(platform::errors::PreconditionNotMet(
@@ -675,9 +674,11 @@ ParallelExecutor::ParallelExecutor(const std::vector<platform::Place> &places,
 
   VLOG(3) << "use ScopeBufferedSSAGraphExecutor";
   if (!member_->build_strategy_.async_mode_) {
-    member_->executor_.reset(new details::ScopeBufferedSSAGraphExecutor(
-        exec_strategy, member_->local_scopes_, member_->local_exec_scopes_,
-        std::move(var_infos), member_->places_, std::move(member_->executor_)));
+    member_->executor_ =
+        std::make_unique<details::ScopeBufferedSSAGraphExecutor>(
+            exec_strategy, member_->local_scopes_, member_->local_exec_scopes_,
+            std::move(var_infos), member_->places_,
+            std::move(member_->executor_));
   }
 
   ResetOpHandleScopeMapOfGraphs(final_graphs, scope_map);
@@ -1352,9 +1353,9 @@ std::vector<ir::Graph *> ParallelExecutor::CreateSSAGraphExecutor(
 
   if (member_->build_strategy_.async_mode_) {
     VLOG(3) << "use AsyncSSAGraphExecutor";
-    member_->executor_.reset(new details::AsyncSSAGraphExecutor(
+    member_->executor_ = std::make_unique<details::AsyncSSAGraphExecutor>(
         exec_strategy, member_->local_scopes_, member_->local_exec_scopes_,
-        member_->places_, *async_graphs));
+        member_->places_, *async_graphs);
     final_graphs = *async_graphs;
   } else if (member_->build_strategy_.enable_parallel_graph_) {
     VLOG(3) << "use ParallelSSAGraphExecutor";
@@ -1403,9 +1404,10 @@ std::vector<ir::Graph *> ParallelExecutor::CreateSSAGraphExecutor(
              "network. It is automatically turned to drop_last=True.";
       if (exec_strategy.type_ == ExecutionStrategy::kDefault) {
         VLOG(3) << "use ThreadedSSAGraphExecutor";
-        member_->executor_.reset(new details::ThreadedSSAGraphExecutor(
-            exec_strategy, member_->local_scopes_, member_->local_exec_scopes_,
-            member_->places_, graph));
+        member_->executor_ =
+            std::make_unique<details::ThreadedSSAGraphExecutor>(
+                exec_strategy, member_->local_scopes_,
+                member_->local_exec_scopes_, member_->places_, graph);
       } else {
         if (member_->use_device_ == p::kXPU) {
 #if defined(PADDLE_WITH_XPU)
@@ -1420,9 +1422,10 @@ std::vector<ir::Graph *> ParallelExecutor::CreateSSAGraphExecutor(
 #endif
         } else {
           VLOG(3) << "use FastThreadedSSAGraphExecutor";
-          member_->executor_.reset(new details::FastThreadedSSAGraphExecutor(
-              exec_strategy, member_->local_scopes_,
-              member_->local_exec_scopes_, member_->places_, graph));
+          member_->executor_ =
+              std::make_unique<details::FastThreadedSSAGraphExecutor>(
+                  exec_strategy, member_->local_scopes_,
+                  member_->local_exec_scopes_, member_->places_, graph);
         }
       }
       final_graphs.emplace_back(graph);

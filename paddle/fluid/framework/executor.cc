@@ -13,7 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "paddle/fluid/framework/executor.h"
+
 #include <memory>
+#include <utility>
+
 #include "paddle/fluid/framework/feed_fetch_method.h"
 #include "paddle/fluid/framework/trainer_desc.pb.h"
 #include "paddle/fluid/framework/trainer_factory.h"
@@ -66,7 +69,7 @@ ExecutorPrepareContext::~ExecutorPrepareContext() {
   VLOG(5) << "destroy ExecutorPrepareContext";
 }
 
-Executor::Executor(const platform::Place& place) : place_(place) {}
+Executor::Executor(platform::Place place) : place_(std::move(place)) {}
 
 Executor::~Executor() {
 #ifdef PADDLE_WITH_MKLDNN
@@ -305,10 +308,10 @@ void Executor::Run(const ProgramDesc& program, Scope* scope,
   bool has_fetch_ops =
       has_fetch_operators(program.Block(0), *fetch_targets, fetch_holder_name);
 
-  ProgramDesc* copy_program = const_cast<ProgramDesc*>(&program);
+  auto* copy_program = const_cast<ProgramDesc*>(&program);
   std::unique_ptr<ProgramDesc> unique_ptr_of_copy_program;
   if (!has_feed_ops || !has_fetch_ops) {
-    unique_ptr_of_copy_program.reset(new ProgramDesc(program));
+    unique_ptr_of_copy_program = std::make_unique<ProgramDesc>(program);
     copy_program = unique_ptr_of_copy_program.get();
   }
   auto* global_block = copy_program->MutableBlock(0);
@@ -450,8 +453,8 @@ void Executor::RunPartialPreparedContext(ExecutorPrepareContext* ctx,
           platform::errors::Unimplemented("No GPU gc found in CPU/XPU paddle"));
 #endif
     } else if (platform::is_cpu_place(place_)) {
-      gc.reset(new CPUGarbageCollector(
-          BOOST_GET_CONST(platform::CPUPlace, place_), max_memory_size));
+      gc = std::make_unique<CPUGarbageCollector>(
+          BOOST_GET_CONST(platform::CPUPlace, place_), max_memory_size);
     } else if (platform::is_xpu_place(place_)) {
 #ifdef PADDLE_WITH_XPU
       gc.reset(new XPUGarbageCollector(
@@ -545,8 +548,9 @@ void Executor::RunPreparedContext(
           "Program in ExecutorPrepareContext should has feed_ops."));
   PADDLE_ENFORCE_EQ(
       has_fetch_operators(global_block, *fetch_targets, fetch_holder_name),
-      true, platform::errors::PreconditionNotMet(
-                "Program in the prepared context should has fetch_ops."));
+      true,
+      platform::errors::PreconditionNotMet(
+          "Program in the prepared context should has fetch_ops."));
 
   // map the data of feed_targets to feed_holder
   for (auto* op : global_block.AllOps()) {

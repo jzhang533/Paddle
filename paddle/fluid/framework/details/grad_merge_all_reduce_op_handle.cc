@@ -13,6 +13,8 @@
 // limitations under the License.
 #include "paddle/fluid/framework/details/grad_merge_all_reduce_op_handle.h"
 
+#include <utility>
+
 #if defined(PADDLE_WITH_NCCL) || defined(PADDLE_WITH_RCCL)
 DECLARE_bool(sync_nccl_allreduce);
 #endif
@@ -41,9 +43,9 @@ GradMergeAllReduceOpHandle::GradMergeAllReduceOpHandle(
 GradMergeAllReduceOpHandle::GradMergeAllReduceOpHandle(
     ir::Node *node, const std::vector<Scope *> &local_scopes,
     const std::vector<platform::Place> &places,
-    const std::string &grad_merge_cond_name)
+    std::string grad_merge_cond_name)
     : AllReduceOpHandle(node, local_scopes, places),
-      grad_merge_cond_name_(grad_merge_cond_name) {}
+      grad_merge_cond_name_(std::move(grad_merge_cond_name)) {}
 #endif
 
 void GradMergeAllReduceOpHandle::RunImpl() {
@@ -90,9 +92,9 @@ FusedGradMergeAllReduceOpHandle::FusedGradMergeAllReduceOpHandle(
 FusedGradMergeAllReduceOpHandle::FusedGradMergeAllReduceOpHandle(
     ir::Node *node, const std::vector<Scope *> &local_scopes,
     const std::vector<platform::Place> &places, const size_t num_of_all_reduce,
-    const std::string &grad_merge_cond_name)
+    std::string grad_merge_cond_name)
     : FusedAllReduceOpHandle(node, local_scopes, places, num_of_all_reduce),
-      grad_merge_cond_name_(grad_merge_cond_name) {}
+      grad_merge_cond_name_(std::move(grad_merge_cond_name)) {}
 #endif
 
 void FusedGradMergeAllReduceOpHandle::RunImpl() {

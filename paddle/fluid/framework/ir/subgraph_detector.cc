@@ -224,10 +224,10 @@ void UnionContractedNodes(const std::unordered_map<int, BriefNode *> &node_map,
 void FlexibleDFS(const std::vector<BriefNode *> &source, bool reverse,
                  const std::function<bool(const BriefNode *)> &enter,
                  const std::function<bool(const BriefNode *)> &leave) {
-  typedef struct {
+  using FNode = struct {
     const BriefNode *node;
     bool leave;
-  } FNode;
+  };
 
   std::vector<FNode> stack;
   for (auto &node : source) {
@@ -411,7 +411,7 @@ void DetachDeletedNodes(framework::ir::Graph *graph) {
 void SubGraphFuser::ReplaceNodesWithSubGraphs() {
   auto subgraphs = SubgraphDetector(graph_, node_inside_subgraph_teller_)();
   for (auto &subgraph : subgraphs) {
-    if (subgraph.size() <= (size_t)min_subgraph_size_) continue;
+    if (subgraph.size() <= static_cast<size_t>(min_subgraph_size_)) continue;
     std::unordered_set<Node *> subgraph_uniq(subgraph.begin(), subgraph.end());
     // replace this sub-graph with the first node. Two steps: 1. Create a Block
     // Node that contains this subgraph 2. Mark the nodes inside the sub-graph

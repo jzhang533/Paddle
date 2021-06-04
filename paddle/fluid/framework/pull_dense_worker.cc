@@ -11,7 +11,8 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#include <time.h>
+#include <ctime>
+
 #include "paddle/fluid/framework/device_worker.h"
 
 namespace paddle {
@@ -21,7 +22,7 @@ class LoDTensor;
 class Scope;
 class Variable;
 
-std::shared_ptr<PullDenseWorker> PullDenseWorker::s_instance_ = NULL;
+std::shared_ptr<PullDenseWorker> PullDenseWorker::s_instance_ = nullptr;
 std::mutex PullDenseWorker::mutex_for_version_;
 std::map<uint64_t, uint64_t> PullDenseWorker::last_versions_;
 std::map<uint64_t, uint64_t> PullDenseWorker::current_version_;
@@ -38,7 +39,7 @@ void PullDenseWorker::Initialize(const TrainerDesc& param) {
   sleep_time_ms_ = param_.sleep_time_ms();
   for (int i = 0; i < dwp_param_.program_config(0).pull_dense_table_id_size();
        ++i) {
-    uint64_t tid = static_cast<uint64_t>(
+    auto tid = static_cast<uint64_t>(
         dwp_param_.program_config(0).pull_dense_table_id(i));
     TableParameter table;
     for (auto i : param_.dense_table()) {
@@ -161,7 +162,7 @@ void PullDenseWorker::PullDense(bool force_update) {
   pull_dense_status_.resize(0);
   for (int i = 0; i < dwp_param_.program_config(0).pull_dense_table_id_size();
        ++i) {
-    uint64_t tid = static_cast<uint64_t>(
+    auto tid = static_cast<uint64_t>(
         dwp_param_.program_config(0).pull_dense_table_id(i));
     if (force_update || CheckUpdateParam(tid)) {
 #if defined(PADDLE_WITH_CUDA) || defined(PADDLE_WITH_HIP) || \
@@ -234,15 +235,13 @@ void PullDenseWorker::SetThreadIdByScope(const Scope* scope, int tid) {
 void PullDenseWorker::MergeDenseParam() {
   for (int x = 0; x < dwp_param_.program_config(0).pull_dense_table_id_size();
        ++x) {
-    uint64_t tid = static_cast<uint64_t>(
+    auto tid = static_cast<uint64_t>(
         dwp_param_.program_config(0).pull_dense_table_id(x));
-    for (size_t j = 0; j < dense_value_names_[tid].size(); j++) {
-      auto& name = dense_value_names_[tid][j];
-
+    for (auto& name : dense_value_names_) {
       Variable* root_var = root_scope_->FindVar(name);
-      LoDTensor* root_tensor = root_var->GetMutable<LoDTensor>();
+      auto* root_tensor = root_var->GetMutable<LoDTensor>();
       Variable* var = thread_scopes_[0]->FindVar(name);
-      LoDTensor* tensor = var->GetMutable<LoDTensor>();
+      auto* tensor = var->GetMutable<LoDTensor>();
       TensorCopy((*tensor), root_tensor->place(), root_tensor);
     }
   }

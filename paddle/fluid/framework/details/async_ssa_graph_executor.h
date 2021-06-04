@@ -36,7 +36,7 @@ class AsyncSSAGraphExecutor : public SSAGraphExecutor {
  public:
   AsyncSSAGraphExecutor(const ExecutionStrategy &strategy,
                         const std::vector<Scope *> &local_scopes,
-                        const std::vector<Scope *> &local_exec_scopes,
+                        std::vector<Scope *> local_exec_scopes,
                         const std::vector<platform::Place> &places,
                         std::vector<ir::Graph *> graphs);
   ~AsyncSSAGraphExecutor() final = default;

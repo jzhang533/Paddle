@@ -273,8 +273,8 @@ class CompileTimeInferShapeContext : public InferShapeContext {
     retv.resize(names.size());
     std::transform(
         names.begin(), names.end(), retv.begin(),
-        std::bind(std::mem_fn(&CompileTimeInferShapeContext::GetVarType), this,
-                  std::placeholders::_1));
+        [Func = std::mem_fn(&CompileTimeInferShapeContext::GetVarType), this](
+            auto &&) { return Func(this, std::forward<decltype(PH1)>(PH1)); });
     return retv;
   }
 
@@ -355,8 +355,7 @@ void OpDesc::CopyFrom(const OpDesc &op_desc) {
   need_update_ = true;
 }
 
-OpDesc::OpDesc(const proto::OpDesc &desc, BlockDesc *block)
-    : desc_(desc), need_update_(false) {
+OpDesc::OpDesc(const proto::OpDesc &desc, BlockDesc *block) : desc_(desc) {
   // restore inputs_
   int input_size = desc_.inputs_size();
   for (int i = 0; i < input_size; ++i) {
@@ -471,8 +470,9 @@ bool OpDesc::HasProtoAttr(const std::string &name) const {
 
 proto::AttrType OpDesc::GetAttrType(const std::string &name) const {
   auto it = attrs_.find(name);
-  PADDLE_ENFORCE_NE(it, attrs_.end(), platform::errors::NotFound(
-                                          "Attribute %s is not found.", name));
+  PADDLE_ENFORCE_NE(
+      it, attrs_.end(),
+      platform::errors::NotFound("Attribute %s is not found.", name));
   return static_cast<proto::AttrType>(it->second.which() - 1);
 }
 
@@ -494,7 +494,7 @@ void OpDesc::SetAttr(const std::string &name, const Attribute &v) {
   // NOTICE(minqiyang): pybind11 will take the empty list in python as
   // the std::vector<int> type in C++; so we have to change the attr's type
   // here if we meet this issue
-  proto::AttrType attr_type = static_cast<proto::AttrType>(v.which() - 1);
+  auto attr_type = static_cast<proto::AttrType>(v.which() - 1);
   if (attr_type == proto::AttrType::INTS &&
       BOOST_GET_CONST(std::vector<int>, v).size() == 0u) {
     // Find current attr via attr name and set the correct attribute value
@@ -575,8 +575,9 @@ void OpDesc::SetAttrMap(
 
 Attribute OpDesc::GetAttr(const std::string &name) const {
   auto it = attrs_.find(name);
-  PADDLE_ENFORCE_NE(it, attrs_.end(), platform::errors::NotFound(
-                                          "Attribute %s is not found.", name));
+  PADDLE_ENFORCE_NE(
+      it, attrs_.end(),
+      platform::errors::NotFound("Attribute %s is not found.", name));
   return it->second;
 }
 
@@ -823,10 +824,11 @@ bool CompileTimeInferShapeContext::HasInput(const std::string &name) const {
   if (length == 0) {
     return false;
   }
-  PADDLE_ENFORCE_EQ(length, 1UL, platform::errors::InvalidArgument(
-                                     "Input(%s) should have only one value, "
-                                     "but it has %d values now.",
-                                     name, length));
+  PADDLE_ENFORCE_EQ(
+      length, 1UL,
+      platform::errors::InvalidArgument("Input(%s) should have only one value, "
+                                        "but it has %d values now.",
+                                        name, length));
   return block_.HasVarRecursive(input_names[0]);
 }
 
@@ -839,10 +841,11 @@ bool CompileTimeInferShapeContext::HasOutput(const std::string &name) const {
   if (length == 0) {
     return false;
   }
-  PADDLE_ENFORCE_EQ(length, 1UL, platform::errors::InvalidArgument(
-                                     "Output(%s) should have only one value, "
-                                     "but it has %d values now.",
-                                     name, length));
+  PADDLE_ENFORCE_EQ(length, 1UL,
+                    platform::errors::InvalidArgument(
+                        "Output(%s) should have only one value, "
+                        "but it has %d values now.",
+                        name, length));
   return block_.HasVarRecursive(output_names[0]);
 }
 

@@ -227,7 +227,7 @@ void PrepareLSTMWeight(const LoDTensor& W_forget_w0,
   out->Resize(make_ddim({D + M, 4 * D}));
   VLOG(3) << "LSTMWeight resized to " << out->dims();
 
-  float* out_data = out->mutable_data<float>(platform::CPUPlace());
+  auto* out_data = out->mutable_data<float>(platform::CPUPlace());
   std::array<const float*, 4> tensors{
       W_forget_w0.data<float>(), W_input_w0.data<float>(),
       W_output_w0.data<float>(), W_cell_w0.data<float>()};

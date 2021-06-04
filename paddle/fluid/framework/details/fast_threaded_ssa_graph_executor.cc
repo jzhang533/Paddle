@@ -18,6 +18,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "paddle/fluid/framework/details/computation_op_handle.h"
@@ -31,12 +32,12 @@ namespace framework {
 namespace details {
 
 FastThreadedSSAGraphExecutor::FastThreadedSSAGraphExecutor(
-    const ExecutionStrategy &strategy, const std::vector<Scope *> &local_scopes,
-    const std::vector<Scope *> &local_exec_scopes,
+    const ExecutionStrategy &strategy, std::vector<Scope *> local_scopes,
+    std::vector<Scope *> local_exec_scopes,
     const std::vector<platform::Place> &places, ir::Graph *graph)
     : strategy_(strategy),
-      local_scopes_(local_scopes),
-      local_exec_scopes_(local_exec_scopes),
+      local_scopes_(std::move(local_scopes)),
+      local_exec_scopes_(std::move(local_exec_scopes)),
       places_(places),
       graph_(graph),
       fetch_ctxs_(places),

@@ -55,10 +55,10 @@ void DeleteQuantDequantOpPass::ApplyImpl(ir::Graph* graph) const {
 
     std::string input_scale_var_name =
         quant_dequant_op->Op()->Input("InScale").front();
-    const LoDTensor& input_scale_tensor =
+    const auto& input_scale_tensor =
         scope->GetVar(input_scale_var_name)->Get<LoDTensor>();
 
-    const float* input_scale_data = input_scale_tensor.data<float>();
+    const auto* input_scale_data = input_scale_tensor.data<float>();
     float input_scale = input_scale_data[0] / 127.;
     auto* any_op2_desc = any_op2->Op();
     // auto input_args_names = any_op2_desc->InputArgumentNames();
@@ -70,8 +70,8 @@ void DeleteQuantDequantOpPass::ApplyImpl(ir::Graph* graph) const {
         arg_name = name_m.first;
       }
     }
-    CHECK(arg_name.size() > 0) << "can not find the input "
-                               << quant_dequant_op_out_name;
+    CHECK(arg_name.size() > 0)
+        << "can not find the input " << quant_dequant_op_out_name;
     any_op2_desc->SetAttr("enable_int8", true);
     any_op2_desc->SetAttr(arg_name + "_scale", input_scale);
 

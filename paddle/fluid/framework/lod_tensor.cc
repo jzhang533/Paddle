@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include "paddle/fluid/framework/lod_tensor.h"
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "paddle/fluid/framework/version.h"
 
@@ -93,11 +93,11 @@ LoD SliceInLevel(const LoD &in, size_t level, size_t elem_begin,
     out_level.assign(in_level.begin() + above_level.front(),
                      in_level.begin() + above_level.back() + 1);
   }
-  for (size_t lvl = 0; lvl < res.size(); lvl++) {
+  for (auto &re : res) {
     // to make the first offset equals 0, all the elements minus the first
     // element
-    size_t front = res[lvl].front();
-    for (auto &ele : res[lvl]) {
+    size_t front = re.front();
+    for (auto &ele : re) {
       ele -= front;
     }
   }
@@ -151,7 +151,8 @@ bool CheckLoD(const LoD &in, int tensor_height) {
   }
   // check: the lowest level's last offset should equals `tensor_height` if
   //        tensor_height>0.
-  if (tensor_height > 0 && (size_t)tensor_height != in.back().back())
+  if (tensor_height > 0 &&
+      static_cast<size_t>(tensor_height) != in.back().back())
     return false;
 
   // check: the higher level's last offset should equals the lower level's
@@ -184,7 +185,7 @@ bool CheckAbsLoD(const LoD &in, int tensor_height) {
     if (level.front() != 0) return false;
     if (tensor_height < 0) {
       tensor_height = level.back();
-    } else if ((size_t)tensor_height != level.back()) {
+    } else if (static_cast<size_t>(tensor_height) != level.back()) {
       return false;
     }
   }
@@ -361,10 +362,10 @@ std::vector<LoDTensor> LoDTensor::SplitLoDTensor(
   if (batch_size == 0) {
     std::vector<LoDTensor> empty_results;
     empty_results.reserve(places.size());
-    for (size_t i = 0; i < places.size(); ++i) {
+    for (const auto &place : places) {
       LoDTensor dst;
       dst.Resize(dims());
-      dst.mutable_data(places[i], type());
+      dst.mutable_data(place, type());
       if (!lod().empty()) {
         dst.set_lod(lod());
       }
@@ -497,13 +498,13 @@ void LoDTensor::MergeLoDTensor(
 LoD ConvertToLengthBasedLoD(const LoD &offset_lod) {
   LoD length_lod;
   length_lod.reserve(offset_lod.size());
-  for (size_t lvl = 0; lvl < offset_lod.size(); ++lvl) {
+  for (const auto &lvl : offset_lod) {
     std::vector<size_t> level;
-    if (offset_lod[lvl].size() > 0) {
-      level.reserve(offset_lod[lvl].size() - 1);
+    if (lvl.size() > 0) {
+      level.reserve(lvl.size() - 1);
     }
-    for (size_t idx = 0; idx < offset_lod[lvl].size() - 1; ++idx) {
-      level.push_back(offset_lod[lvl][idx + 1] - offset_lod[lvl][idx]);
+    for (size_t idx = 0; idx < lvl.size() - 1; ++idx) {
+      level.push_back(lvl[idx + 1] - lvl[idx]);
     }
     length_lod.push_back(level);
   }
@@ -513,13 +514,13 @@ LoD ConvertToLengthBasedLoD(const LoD &offset_lod) {
 LoD ConvertToOffsetBasedLoD(const LoD &length_lod) {
   LoD offset_lod;
   offset_lod.reserve(length_lod.size());
-  for (size_t lvl = 0; lvl < length_lod.size(); ++lvl) {
+  for (const auto &lvl : length_lod) {
     std::vector<size_t> level;
-    level.reserve(length_lod[lvl].size() + 1);
+    level.reserve(lvl.size() + 1);
     size_t tmp = 0;
     level.push_back(tmp);
-    for (size_t idx = 0; idx < length_lod[lvl].size(); ++idx) {
-      tmp += length_lod[lvl][idx];
+    for (size_t idx = 0; idx < lvl.size(); ++idx) {
+      tmp += lvl[idx];
       level.push_back(tmp);
     }
     offset_lod.push_back(level);

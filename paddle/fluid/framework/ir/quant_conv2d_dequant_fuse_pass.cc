@@ -59,13 +59,13 @@ void DeleteQuant(ir::Graph* graph, Scope* scope,
     PADDLE_ENFORCE_NOT_NULL(
         scope, platform::errors::InvalidArgument(
                    "Scope in QuantDequantFuse pass should not be null."));
-    const LoDTensor& input_scale_tensor =
+    const auto& input_scale_tensor =
         scope->FindVar(input_scale_var_name)->Get<LoDTensor>();
     PADDLE_ENFORCE_EQ(
         paddle::platform::is_cpu_place(input_scale_tensor.place()), true,
         platform::errors::InvalidArgument(
             "Input scale tensor's place should be CPU."));
-    const float* input_scale_data = input_scale_tensor.data<float>();
+    const auto* input_scale_data = input_scale_tensor.data<float>();
     float in_scale = input_scale_data[0];
     float scale_value = in_scale / range;
 
@@ -171,13 +171,13 @@ void FuseDequant(ir::Graph* graph, Scope* scope,
           platform::errors::InvalidArgument(
               "Scales size in channel-wise dequantize op should be 2, got %d.",
               scales_name.size()));
-      const LoDTensor& channel_scale_tensor =
+      const auto& channel_scale_tensor =
           scope->FindVar(scales_name[0])->Get<LoDTensor>();
       PADDLE_ENFORCE_EQ(
           paddle::platform::is_cpu_place(channel_scale_tensor.place()), true,
           platform::errors::InvalidArgument(
               "Channel scale tensor's place should be CPU."));
-      const float* channel_scale_data = channel_scale_tensor.data<float>();
+      const auto* channel_scale_data = channel_scale_tensor.data<float>();
       for (int i = 0; i < channel_scale_tensor.numel(); i++) {
         weight_scale.push_back(channel_scale_data[i] / range);
       }
@@ -192,7 +192,7 @@ void FuseDequant(ir::Graph* graph, Scope* scope,
     auto* weight_tensor =
         scope->Var(quantized_op_weight_node->Name())->GetMutable<LoDTensor>();
     auto w_dims = weight_tensor->dims();
-    float* quantized_weight_data =
+    auto* quantized_weight_data =
         weight_tensor->mutable_data<float>(platform::CPUPlace());
     // If quantized op is fc, weight scale size = 1;
     // If quantized op is conv2d, weight scale size = weight dims[0]

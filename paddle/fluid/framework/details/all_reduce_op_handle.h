@@ -58,8 +58,8 @@ class AllReduceOpHandle : public BKCLOpHandleBase {
 #else
 class AllReduceOpHandle : public OpHandleBase {
  public:
-  AllReduceOpHandle(ir::Node *node, const std::vector<Scope *> &local_scopes,
-                    const std::vector<platform::Place> &places);
+  AllReduceOpHandle(ir::Node *node, std::vector<Scope *> local_scopes,
+                    std::vector<platform::Place> places);
 #endif
   std::string Name() const override;
 

@@ -122,8 +122,9 @@ bool DataFeed::PickOneFile(std::string* filename) {
 }
 
 void DataFeed::CheckInit() {
-  PADDLE_ENFORCE_EQ(finish_init_, true, platform::errors::PreconditionNotMet(
-                                            "DataFeed initialization failed."));
+  PADDLE_ENFORCE_EQ(
+      finish_init_, true,
+      platform::errors::PreconditionNotMet("DataFeed initialization failed."));
 }
 
 void DataFeed::CheckSetFileList() {
@@ -857,13 +858,13 @@ void MultiSlotInMemoryDataFeed::Init(
   feed_vec_.resize(use_slots_.size());
   const int kEstimatedFeasignNumPerSlot = 5;  // Magic Number
   for (size_t i = 0; i < all_slot_num; i++) {
-    batch_float_feasigns_.push_back(std::vector<float>());
-    batch_uint64_feasigns_.push_back(std::vector<uint64_t>());
+    batch_float_feasigns_.emplace_back();
+    batch_uint64_feasigns_.emplace_back();
     batch_float_feasigns_[i].reserve(default_batch_size_ *
                                      kEstimatedFeasignNumPerSlot);
     batch_uint64_feasigns_[i].reserve(default_batch_size_ *
                                       kEstimatedFeasignNumPerSlot);
-    offset_.push_back(std::vector<size_t>());
+    offset_.emplace_back();
     offset_[i].reserve(default_batch_size_ +
                        1);  // Each lod info will prepend a zero
   }
@@ -878,13 +879,13 @@ void MultiSlotInMemoryDataFeed::GetMsgFromLogKey(const std::string& log_key,
                                                  uint32_t* cmatch,
                                                  uint32_t* rank) {
   std::string searchid_str = log_key.substr(16, 16);
-  *search_id = (uint64_t)strtoull(searchid_str.c_str(), NULL, 16);
+  *search_id = (uint64_t)strtoull(searchid_str.c_str(), nullptr, 16);
 
   std::string cmatch_str = log_key.substr(11, 3);
-  *cmatch = (uint32_t)strtoul(cmatch_str.c_str(), NULL, 16);
+  *cmatch = (uint32_t)strtoul(cmatch_str.c_str(), nullptr, 16);
 
   std::string rank_str = log_key.substr(14, 2);
-  *rank = (uint32_t)strtoul(rank_str.c_str(), NULL, 16);
+  *rank = (uint32_t)strtoul(rank_str.c_str(), nullptr, 16);
 }
 
 bool MultiSlotInMemoryDataFeed::ParseOneInstanceFromPipe(Record* instance) {
@@ -1286,9 +1287,10 @@ template class PrivateInstantDataFeed<std::vector<MultiSlotType>>;
 bool MultiSlotFileInstantDataFeed::Preprocess(const std::string& filename) {
   fd_ = open(filename.c_str(), O_RDONLY);
   PADDLE_ENFORCE_NE(
-      fd_, -1, platform::errors::Unavailable(
-                   "Fail to open file: %s in MultiSlotFileInstantDataFeed.",
-                   filename.c_str()));
+      fd_, -1,
+      platform::errors::Unavailable(
+          "Fail to open file: %s in MultiSlotFileInstantDataFeed.",
+          filename.c_str()));
 
   struct stat sb;
   fstat(fd_, &sb);

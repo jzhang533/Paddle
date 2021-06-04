@@ -67,9 +67,10 @@ void DeleteQuantDequantFilterOpPass::ApplyImpl(ir::Graph* graph) const {
         break;
       }
     }
-    PADDLE_ENFORCE_GT(arg_name.size(), 0, platform::errors::InvalidArgument(
-                                              "can not find the input %s.",
-                                              quant_dequant_op_out_name));
+    PADDLE_ENFORCE_GT(
+        arg_name.size(), 0,
+        platform::errors::InvalidArgument("can not find the input %s.",
+                                          quant_dequant_op_out_name));
     any_op2_desc->SetAttr("enable_int8", true);
     any_op2_desc->SetAttr("bit_length", bit_length);
     // modify the any_op2's inputs
@@ -80,7 +81,7 @@ void DeleteQuantDequantFilterOpPass::ApplyImpl(ir::Graph* graph) const {
     auto* weight_tensor =
         scope->GetVar(quant_dequant_op_x->Name())->GetMutable<LoDTensor>();
     auto w_dims = weight_tensor->dims();
-    float* quantized_weight_data =
+    auto* quantized_weight_data =
         weight_tensor->mutable_data<float>(platform::CPUPlace());
 
     // Get weight scale
@@ -91,7 +92,7 @@ void DeleteQuantDequantFilterOpPass::ApplyImpl(ir::Graph* graph) const {
                             "Scales size in channel-wise quant dequantize op "
                             "should be 1, got %d.",
                             scales_name.size()));
-      const LoDTensor& channel_scale_tensor =
+      const auto& channel_scale_tensor =
           scope->GetVar(scales_name[0])->Get<LoDTensor>();
       PADDLE_ENFORCE(
           paddle::platform::is_cpu_place(channel_scale_tensor.place()),

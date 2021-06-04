@@ -15,6 +15,7 @@
 #include "paddle/fluid/framework/details/computation_op_handle.h"
 
 #include <string>
+#include <utility>
 
 namespace paddle {
 namespace framework {
@@ -27,7 +28,7 @@ ComputationOpHandle::ComputationOpHandle(ir::Node *node, Scope *scope,
     : OpHandleBase(node),
       op_(framework::OpRegistry::CreateOp(*node->Op())),
       scope_(scope),
-      place_(place),
+      place_(std::move(place)),
       scope_idx_(scope_idx) {}
 
 void ComputationOpHandle::RunImpl() {

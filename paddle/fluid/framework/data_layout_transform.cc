@@ -14,6 +14,8 @@
 
 #include "paddle/fluid/framework/data_layout_transform.h"
 
+#include <utility>
+
 #include "paddle/fluid/operators/math/math_function.h"
 #ifdef PADDLE_WITH_MKLDNN
 #include "paddle/fluid/platform/mkldnn_reuse.h"
@@ -38,10 +40,9 @@ std::vector<int> GetAxis(const DataLayout& from, const DataLayout& to) {
 }
 
 struct CastDataLayout {
-  CastDataLayout(const platform::DeviceContext* ctx,
-                 const std::vector<int>& axis, const framework::Tensor& in,
-                 framework::Tensor* out)
-      : in_(in), out_(out), ctx_(ctx), axis_(axis) {}
+  CastDataLayout(const platform::DeviceContext* ctx, std::vector<int> axis,
+                 framework::Tensor in, framework::Tensor* out)
+      : in_(std::move(in)), out_(out), ctx_(ctx), axis_(std::move(axis)) {}
   const framework::Tensor in_;
   framework::Tensor* out_;
   const platform::DeviceContext* ctx_;

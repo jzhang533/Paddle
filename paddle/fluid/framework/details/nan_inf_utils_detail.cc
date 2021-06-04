@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/framework/details/nan_inf_utils.h"
 #include "paddle/fluid/framework/details/nan_inf_utils_detail.h"
+
+#include "paddle/fluid/framework/details/nan_inf_utils.h"
 #include "paddle/fluid/framework/op_proto_maker.h"
 namespace paddle {
 namespace framework {
@@ -81,7 +82,7 @@ static void InitWhiteListFormEnv() {
   const char* op_role_skip = std::getenv("PADDLE_INF_NAN_SKIP_ROLE");
   const char* op_var_skip = std::getenv("PADDLE_INF_NAN_SKIP_VAR");
 
-  if (op_type_skip != NULL) {
+  if (op_type_skip != nullptr) {
     std::stringstream ss(op_type_skip);
     std::string op_type;
     while (std::getline(ss, op_type, ',')) {
@@ -89,7 +90,7 @@ static void InitWhiteListFormEnv() {
     }
   }
 
-  if (op_role_skip != NULL) {
+  if (op_role_skip != nullptr) {
     std::stringstream ss(op_role_skip);
     std::string op_role;
     while (std::getline(ss, op_role, ',')) {
@@ -104,7 +105,7 @@ static void InitWhiteListFormEnv() {
     }
   }
 
-  if (op_var_skip != NULL) {
+  if (op_var_skip != nullptr) {
     std::stringstream ss(op_var_skip);
     std::string op_var;
     while (std::getline(ss, op_var, ',')) {
@@ -245,7 +246,7 @@ void CheckNanInf<paddle::platform::complex<float>>(
 }
 
 template <>
-    void CheckNanInf<paddle::platform::complex<double>>>
+    void CheckNanInf<paddle::platform::complex<double>> >
     (const paddle::platform::complex<double>* value, const size_t numel,
      int print_num, const std::string& op_type, const std::string& var_name) {
   double real_sum = 0.0;

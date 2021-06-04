@@ -13,6 +13,8 @@
 // limitations under the License.
 #include "paddle/fluid/framework/details/multi_devices_helper.h"
 
+#include <memory>
+
 #include "paddle/fluid/framework/details/computation_op_handle.h"
 #include "paddle/fluid/framework/details/eager_deletion_op_handle.h"
 #include "paddle/fluid/framework/details/share_tensor_buffer_op_handle.h"
@@ -204,7 +206,7 @@ std::vector<std::unique_ptr<ir::Graph>> TrySeparateToMultipleSingleDeviceGraphs(
 
   std::vector<std::unique_ptr<ir::Graph>> graphs(place_num);
   for (auto &g : graphs) {
-    g.reset(new ir::Graph(ProgramDesc()));
+    g = std::make_unique<ir::Graph>(ProgramDesc());
     g->Set(kGraphVars, new GraphVars(1UL));
     g->Set(kGraphDepVars, new GraphDepVars());
   }

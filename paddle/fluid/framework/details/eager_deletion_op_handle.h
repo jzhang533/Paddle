@@ -47,7 +47,7 @@ namespace details {
 class EagerDeletionOpHandle : public OpHandleBase {
  public:
   EagerDeletionOpHandle(ir::Node *node, Scope *scope, size_t scope_idx,
-                        const platform::Place &place,
+                        platform::Place place,
                         const std::unordered_set<ir::MemOptVarInfo *> &vars,
                         GarbageCollector *gc);
 

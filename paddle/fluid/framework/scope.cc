@@ -46,7 +46,7 @@ namespace framework {
 Scope::~Scope() { DropKids(); }
 
 Scope& Scope::NewScope() const {
-  Scope* child = new Scope(this);
+  auto* child = new Scope(this);
   {
     SCOPE_KIDS_WRITER_LOCK
     kids_.push_back(child);

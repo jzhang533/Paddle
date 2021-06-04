@@ -79,8 +79,7 @@ void DistMultiTrainer::InitDumpEnv() {
     }
   }
   for (int i = 0; i < dump_thread_num_; i++) {
-    dump_thread_.push_back(
-        std::thread(std::bind(&TrainerBase::DumpWork, this, i)));
+    dump_thread_.emplace_back([this, i] { DumpWork(i); });
   }
 }
 
@@ -120,11 +119,10 @@ void DistMultiTrainer::InitOtherEnv(const ProgramDesc &main_program) {
 void DistMultiTrainer::Run() {
   for (int thidx = 0; thidx < thread_num_; ++thidx) {
     if (!debug_) {
-      threads_.push_back(
-          std::thread(&DeviceWorker::TrainFiles, workers_[thidx].get()));
+      threads_.emplace_back(&DeviceWorker::TrainFiles, workers_[thidx].get());
     } else {
-      threads_.push_back(std::thread(&DeviceWorker::TrainFilesWithProfiler,
-                                     workers_[thidx].get()));
+      threads_.emplace_back(&DeviceWorker::TrainFilesWithProfiler,
+                            workers_[thidx].get());
     }
   }
 }
@@ -142,12 +140,12 @@ void DistMultiTrainer::Finalize() {
     if (root_var == nullptr) {
       continue;
     }
-    LoDTensor *root_tensor = root_var->GetMutable<LoDTensor>();
+    auto *root_tensor = root_var->GetMutable<LoDTensor>();
     for (int j = 1; j < thread_num_; j++) {
       Scope *cur_thread_scope = workers_[j]->GetThreadScope();
       Variable *thread_var =
           cur_thread_scope->FindVar(need_merge_var_names_[i]);
-      LoDTensor *thread_tensor = thread_var->GetMutable<LoDTensor>();
+      auto *thread_tensor = thread_var->GetMutable<LoDTensor>();
       if (root_tensor->numel() != thread_tensor->numel()) {
         continue;
       }

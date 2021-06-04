@@ -13,9 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "paddle/fluid/framework/ir/op_compat_sensible_pass.h"
+
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+
 #include "paddle/fluid/framework/op_def_api.h"
 #include "paddle/fluid/framework/op_info.h"
 
@@ -246,7 +248,7 @@ bool OpCompat::Judge(const OpDesc& op_desc) {
 
 OpCompat& OpCompatSensiblePass::AddOpCompat(OpCompat&& op_compat) {
   std::string name = op_compat.Name();
-  op_compat_judgers_[name].reset(new OpCompat(std::move(op_compat)));
+  op_compat_judgers_[name] = std::make_unique<OpCompat>(std::move(op_compat));
   return *(op_compat_judgers_[name]);
 }
 

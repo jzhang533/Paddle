@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <string>
+
 #include "paddle/fluid/framework/device_worker_factory.h"
 #include "paddle/fluid/framework/trainer.h"
 
@@ -100,8 +101,7 @@ void MultiTrainer::InitDumpEnv() {
     }
   }
   for (int i = 0; i < dump_thread_num_; i++) {
-    dump_thread_.push_back(
-        std::thread(std::bind(&TrainerBase::DumpWork, this, i)));
+    dump_thread_.emplace_back([this, i] { DumpWork(i); });
   }
 }
 
@@ -164,11 +164,10 @@ void MultiTrainer::Run() {
   VLOG(3) << "Going to run";
   for (int thidx = 0; thidx < thread_num_; ++thidx) {
     if (!debug_) {
-      threads_.push_back(
-          std::thread(&DeviceWorker::TrainFiles, workers_[thidx].get()));
+      threads_.emplace_back(&DeviceWorker::TrainFiles, workers_[thidx].get());
     } else {
-      threads_.push_back(std::thread(&DeviceWorker::TrainFilesWithProfiler,
-                                     workers_[thidx].get()));
+      threads_.emplace_back(&DeviceWorker::TrainFilesWithProfiler,
+                            workers_[thidx].get());
     }
   }
   for (auto& th : threads_) {

@@ -1,4 +1,19 @@
 #!/bin/bash
+
+# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 #set -ex
 
 YELLOW='\033[0;33m'
@@ -31,11 +46,15 @@ export OPENBLAS_ROOT=/opt/homebrew/opt/openblas/
 "
 
 echo -e "${YELLOW}# compile instructions${NC}
-mkdir build
-cd build
-cmake .. -DPY_VERSION=3.9 -DWITH_GPU=OFF -DWITH_TESTING=OFF -DWITH_AVX=OFF -DWITH_ARM=ON -DCMAKE_BUILD_TYPE=Release
-make TARGET=ARMV8 -j4
+cmake -S . -B build -DPY_VERSION=3.9 -DWITH_GPU=OFF -DWITH_TESTING=OFF -DWITH_AVX=OFF -DWITH_ARM=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j $(sysctl -n hw.ncpu)
 "
+
+echo -e "${YELLOW}# compile instructions using Ninja${NC}
+cmake -S . -B build-ninja -GNinja -DPY_VERSION=3.9 -DWITH_GPU=OFF -DWITH_TESTING=OFF -DWITH_AVX=OFF -DWITH_ARM=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build-ninja
+"
+
 VERSION=$(date "+%Y.%m.%d")
 
 echo -e "${YELLOW}# to specify a verison number in the built package${NC}

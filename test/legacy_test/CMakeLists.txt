@@ -15,10 +15,6 @@ list(REMOVE_ITEM DIST_TEST_OPS "test_dist_op")
 
 string(REPLACE ".py" "" DIST_TEST_OPS "${DIST_TEST_OPS}")
 
-if((NOT WITH_GPU) AND (NOT WITH_XPU))
-  list(REMOVE_ITEM DIST_TEST_OPS "test_dist_mnist_batch_merge")
-endif()
-
 # The following unittest is now in deprecated dir, we can delete this code when we move it from deprecated dir to this dir
 ###### start ######
 list(REMOVE_ITEM TEST_OPS test_squared_l2_norm_op)
@@ -103,12 +99,8 @@ if(((NOT WITH_ROCM) AND (NOT WITH_GPU)) OR WIN32)
   list(REMOVE_ITEM TEST_OPS test_fleet_executor)
   list(REMOVE_ITEM TEST_OPS test_fleet_executor_with_task_nodes)
   list(REMOVE_ITEM TEST_OPS test_fleet_executor_multi_devices)
-  list(REMOVE_ITEM TEST_OPS test_fleet_executor_origin_scheduler)
   list(REMOVE_ITEM TEST_OPS test_auto_parallel_mapper)
-  list(REMOVE_ITEM TEST_OPS test_fleet_executor_task_node)
-  list(REMOVE_ITEM TEST_OPS test_fleet_exe_dist_model_run)
   list(REMOVE_ITEM TEST_OPS test_fleet_exe_dist_model_tensor)
-  list(REMOVE_ITEM TEST_OPS test_fleet_executor_cond_interceptor)
   list(REMOVE_ITEM TEST_OPS test_async_offload_reload)
 endif()
 
@@ -117,6 +109,7 @@ if(NOT WITH_NCCL)
 endif()
 
 if(WIN32)
+  list(REMOVE_ITEM TEST_OPS test_multiprocess_reader_exception)
   list(REMOVE_ITEM TEST_OPS test_trainer_desc)
   list(REMOVE_ITEM TEST_OPS test_checkpoint_notify_op)
   list(REMOVE_ITEM TEST_OPS test_downpoursgd_deprecated)
@@ -502,6 +495,7 @@ endif()
 # Currently, only ops that register NoNeedBufferVarsInference need to do this test
 set(TEST_OPS_WITH_GC
     test_affine_channel_op
+    test_slice_op
     test_scatter_op
     test_concat_op
     test_elementwise_add_op
@@ -530,7 +524,6 @@ if((NOT WITH_GPU)
   list(REMOVE_ITEM TEST_OPS "test_dist_fleet_grad_clip")
   list(REMOVE_ITEM TEST_OPS "test_dist_fleet_heter_ctr")
   list(REMOVE_ITEM TEST_OPS "test_dist_fleet_ps_gpu_ctr")
-  list(REMOVE_ITEM TEST_OPS "test_dist_mnist_batch_merge")
 endif()
 
 list(REMOVE_ITEM TEST_OPS "test_stride")
@@ -742,9 +735,7 @@ set_tests_properties(
   test_buffer_shared_memory_reuse_pass_and_fuse_optimization_op_pass
   test_buffer_shared_memory_reuse_pass PROPERTIES LABELS "RUN_TYPE=DIST")
 set_tests_properties(
-  test_sync_batch_norm_op test_distributed_fused_lamb_op_with_clip
-  test_distributed_fused_lamb_op_without_clip
-  test_distributed_fused_lamb_op_with_gradient_merge
+  test_sync_batch_norm_op test_distributed_fused_lamb_op_without_clip
   PROPERTIES LABELS "RUN_TYPE=DIST")
 
 if(NOT WIN32 AND NOT APPLE)
@@ -774,8 +765,6 @@ if(WITH_DISTRIBUTE)
   set_tests_properties(test_dist_fleet_sparse_embedding_ctr PROPERTIES TIMEOUT
                                                                        200)
   set_tests_properties(test_dist_fleet_infer PROPERTIES TIMEOUT 200)
-  set_tests_properties(test_dist_fleet_raw_program_optimizer_fuse_allreduce
-                       PROPERTIES TIMEOUT 60)
   set_tests_properties(test_dist_dygraph_apis PROPERTIES TIMEOUT 120)
 endif()
 
@@ -800,6 +789,8 @@ if(NOT WIN32)
   endif()
   py_test_modules(test_layers MODULES test_layers ENVS
                   FLAGS_cudnn_deterministic=1)
+  set_tests_properties(test_multiprocess_reader_exception
+                       PROPERTIES LABELS "RUN_TYPE=EXCLUSIVE")
   set_tests_properties(test_layers PROPERTIES TIMEOUT 120)
 endif()
 set_tests_properties(test_buffer_shared_memory_reuse_pass PROPERTIES TIMEOUT
@@ -851,12 +842,8 @@ set_tests_properties(test_dropout_op PROPERTIES TIMEOUT 120)
 set_tests_properties(test_imperative_ocr_attention_model PROPERTIES TIMEOUT 120)
 set_tests_properties(test_nn_grad PROPERTIES TIMEOUT 180)
 set_tests_properties(test_elementwise_sub_op PROPERTIES TIMEOUT 120)
-set_tests_properties(test_distributed_fused_lamb_op_with_clip PROPERTIES TIMEOUT
-                                                                         240)
 set_tests_properties(test_distributed_fused_lamb_op_without_clip
                      PROPERTIES TIMEOUT 120)
-set_tests_properties(test_distributed_fused_lamb_op_with_gradient_merge
-                     PROPERTIES TIMEOUT 240)
 set_tests_properties(test_elementwise_min_op PROPERTIES TIMEOUT 120)
 set_tests_properties(test_elementwise_add_op PROPERTIES TIMEOUT 200)
 if(NOT WITH_COVERAGE)
@@ -885,7 +872,6 @@ set_tests_properties(
   test_buffer_shared_memory_reuse_pass_and_fuse_optimization_op_pass
   PROPERTIES TIMEOUT 120)
 set_tests_properties(test_pool_max_op PROPERTIES TIMEOUT 500)
-set_tests_properties(test_group_norm_op PROPERTIES TIMEOUT 1000)
 set_tests_properties(test_imperative_transformer_sorted_gradient
                      PROPERTIES TIMEOUT 120)
 set_tests_properties(test_imperative_optimizer PROPERTIES TIMEOUT 250)
@@ -1028,7 +1014,6 @@ set(TEST_CINN_OPS
     test_batch_norm_op_prim_nchw
     test_batch_norm_op_prim_nhwc
     test_dropout_op
-    test_group_norm_op
     test_tile_op
     test_sum_op
     test_squeeze2_op
@@ -1040,7 +1025,11 @@ set(TEST_CINN_OPS
     test_pad_op
     test_pool2d_op
     test_erf_op
-    test_cumsum_op)
+    test_arg_min_max_op
+    test_slice_op
+    test_softmax_op
+    test_cumsum_op
+    test_where_op)
 
 foreach(TEST_CINN_OP ${TEST_CINN_OPS})
   if(WITH_CINN)
@@ -1066,6 +1055,7 @@ set_tests_properties(
 
 # These UTs are to temporarily test static build for standalone_executor, will be removed after static build is enabled by default.
 set(STATIC_BUILD_TESTS
+    test_arg_min_max_op
     test_adagrad_op
     test_reduce_op
     test_adamw_op
@@ -1103,6 +1093,7 @@ set(STATIC_BUILD_TESTS
     test_random_routing_op
     test_searchsorted_op
     test_sparse_momentum_op
+    test_sparse_norm_op
     test_sgd_op_bf16
     test_softmax_mask_fuse_upper_triangle_op
     test_sparse_pooling_op
@@ -1170,9 +1161,6 @@ if((WITH_ROCM OR WITH_GPU) AND NOT WIN32)
   set_tests_properties(
     test_fleet_executor PROPERTIES ENVIRONMENT
                                    "FLAGS_new_executor_micro_batching=False")
-  set_tests_properties(
-    test_fleet_executor_origin_scheduler
-    PROPERTIES ENVIRONMENT "FLAGS_new_executor_micro_batching=False")
   set_tests_properties(
     test_fleet_executor_with_task_nodes
     PROPERTIES ENVIRONMENT "FLAGS_new_executor_micro_batching=False")
@@ -1256,3 +1244,4 @@ set_tests_properties(test_inplace_softmax_with_cross_entropy PROPERTIES TIMEOUT
                                                                         120)
 set_tests_properties(test_imperative_selected_rows_to_lod_tensor
                      PROPERTIES TIMEOUT 200)
+set_tests_properties(test_slice_op PROPERTIES TIMEOUT 120)
